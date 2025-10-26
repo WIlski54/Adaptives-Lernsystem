@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DNA-Lernassistent 🧬</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .status-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .status-item .emoji {
+            font-size: 1.3rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .welcome-screen {
+            text-align: center;
+        }
+
+        .welcome-screen h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin: 25px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            touch-action: manipulation;
+            -webkit-appearance: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:active {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .question-box {
+            background: #f8f9ff;
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 1.15rem;
+            line-height: 1.6;
+        }
+
+        .feedback-box {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .feedback-gut {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+
+        .feedback-mittel {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            color: #856404;
+        }
+
+        .feedback-hilfe {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+
+        .textarea-field {
+            width: 100%;
+            min-height: 150px;
+            padding: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+        }
+
+        .textarea-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .themen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .thema-btn {
+            padding: 20px;
+            background: #f8f9ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
+            touch-action: manipulation;
+        }
+
+        .thema-btn:active {
+            transform: scale(0.95);
+            background: #667eea;
+            color: white;
+        }
+
+        .thema-btn.aktiv {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .erklärung {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* iPad-spezifische Optimierungen */
+        @media (min-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .card {
+                padding: 40px;
+            }
+        }
+
+        /* Landscape-Modus */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧬 DNA-Lernassistent</h1>
+            <p>Dein persönlicher Tutor für Vererbung</p>
+        </div>
+
+        <!-- Status Bar (nur im Lernmodus sichtbar) -->
+        <div id="statusBar" class="status-bar hidden">
+            <div class="status-item">
+                <span class="emoji">👤</span>
+                <span id="schülerName">--</span>
+            </div>
+            <div class="status-item">
+                <span class="emoji">⭐</span>
+                <span id="punkteAnzeige">0 Punkte</span>
+            </div>
+            <div class="status-item">
+                <span class="emoji">📚</span>
+                <span id="themaAnzeige">--</span>
+            </div>
+        </div>
+
+        <!-- Willkommensbildschirm -->
+        <div id="welcomeScreen" class="card welcome-screen">
+            <h2>Willkommen! 👋</h2>
+            <p style="margin-bottom: 30px; color: #666; font-size: 1.1rem;">
+                Ich bin dein persönlicher DNA-Tutor und passe mich deinem Lernfortschritt an.
+            </p>
+            
+            <div class="input-group">
+                <label for="nameInput">Wie heißt du?</label>
+                <input type="text" id="nameInput" class="input-field" placeholder="Dein Name" autocomplete="name">
+            </div>
+
+            <button class="btn btn-primary" onclick="startLernen()">
+                Los geht's! 🚀
+            </button>
+        </div>
+
+        <!-- Lernbereich -->
+        <div id="lernBereich" class="card hidden">
+            <!-- Themenwahl -->
+            <div id="themenWahl" style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 15px; color: #667eea;">Wähle dein Thema:</h3>
+                <div class="themen-grid">
+                    <button class="thema-btn aktiv" onclick="themaWechseln('1_grundlagen')">
+                        🔬 DNA-Grundlagen
+                    </button>
+                    <button class="thema-btn" onclick="themaWechseln('2_aufbau')">
+                        🧬 Chromosomen
+                    </button>
+                    <button class="thema-btn" onclick="themaWechseln('3_replikation')">
+                        ⚡ Verdopplung
+                    </button>
+                    <button class="thema-btn" onclick="themaWechseln('4_vererbung')">
+                        👨‍👩‍👧‍👦 Vererbung
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aktuelle Frage -->
+            <div id="frageContainer">
+                <div class="question-box" id="frageText">
+                    <!-- Frage wird hier angezeigt -->
+                </div>
+            </div>
+
+            <!-- Feedback-Bereich -->
+            <div id="feedbackContainer" class="hidden">
+                <div id="feedbackBox" class="feedback-box">
+                    <!-- Feedback wird hier angezeigt -->
+                </div>
+                <div id="erklärungBox" class="erklärung hidden">
+                    <!-- Zusätzliche Erklärung -->
+                </div>
+            </div>
+
+            <!-- Antwort-Eingabe -->
+            <div class="input-group">
+                <label for="antwortInput">Deine Antwort:</label>
+                <textarea id="antwortInput" class="textarea-field" placeholder="Schreib hier deine Antwort..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" id="antwortenBtn" onclick="antwortSenden()">
+                Antwort absenden ✓
+            </button>
+
+            <button class="btn btn-secondary hidden" id="weiterBtn" onclick="zumNächsten()">
+                Weiter zur nächsten Frage →
+            </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="card loading hidden">
+            <div class="spinner"></div>
+            <p>KI denkt nach...</p>
+        </div>
+    </div>
+
+    <script>
+        let aktuellesThema = '1_grundlagen';
+
+        async function startLernen() {
+            const name = document.getElementById('nameInput').value.trim();
+            
+            if (!name) {
+                alert('Bitte gib deinen Namen ein! 😊');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('schülerName').textContent = name;
+                    document.getElementById('themaAnzeige').textContent = data.thema;
+                    document.getElementById('frageText').textContent = data.frage;
+
+                    // UI umschalten
+                    document.getElementById('welcomeScreen').classList.add('hidden');
+                    document.getElementById('statusBar').classList.remove('hidden');
+                    document.getElementById('lernBereich').classList.remove('hidden');
+                    hideLoading();
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Es gab einen Fehler. Bitte versuche es nochmal.');
+                hideLoading();
+            }
+        }
+
+        async function antwortSenden() {
+            const antwort = document.getElementById('antwortInput').value.trim();
+            
+            if (!antwort) {
+                alert('Bitte gib eine Antwort ein! 📝');
+                return;
+            }
+
+            showLoading();
+            document.getElementById('antwortenBtn').disabled = true;
+
+            try {
+                const response = await fetch('/antworten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ antwort: antwort })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Zeige Feedback
+                    const feedbackBox = document.getElementById('feedbackBox');
+                    feedbackBox.textContent = data.feedback;
+                    
+                    // Feedback-Farbe basierend auf Verständnis
+                    feedbackBox.className = 'feedback-box';
+                    if (data.verständnis === 'gut') {
+                        feedbackBox.classList.add('feedback-gut');
+                    } else if (data.verständnis === 'mittel') {
+                        feedbackBox.classList.add('feedback-mittel');
+                    } else {
+                        feedbackBox.classList.add('feedback-hilfe');
+                    }
+
+                    // Zeige Erklärung falls vorhanden
+                    const erklärungBox = document.getElementById('erklärungBox');
+                    if (data.erklärung) {
+                        erklärungBox.textContent = data.erklärung;
+                        erklärungBox.classList.remove('hidden');
+                    } else {
+                        erklärungBox.classList.add('hidden');
+                    }
+
+                    // Aktualisiere nächste Frage
+                    document.getElementById('frageText').textContent = data.nächste_frage;
+
+                    // Update Punkte
+                    document.getElementById('punkteAnzeige').textContent = data.punkte + ' Punkte';
+
+                    // UI umschalten
+                    document.getElementById('feedbackContainer').classList.remove('hidden');
+                    document.getElementById('antwortenBtn').classList.add('hidden');
+                    document.getElementById('weiterBtn').classList.remove('hidden');
+
+                    hideLoading();
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Es gab einen Fehler. Bitte versuche es nochmal.');
+                hideLoading();
+                document.getElementById('antwortenBtn').disabled = false;
+            }
+        }
+
+        function zumNächsten() {
+            // Reset UI
+            document.getElementById('antwortInput').value = '';
+            document.getElementById('feedbackContainer').classList.add('hidden');
+            document.getElementById('antwortenBtn').classList.remove('hidden');
+            document.getElementById('antwortenBtn').disabled = false;
+            document.getElementById('weiterBtn').classList.add('hidden');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function themaWechseln(themaId) {
+            if (aktuellesThema === themaId) return;
+
+            const confirmed = confirm('Möchtest du wirklich das Thema wechseln? Dein bisheriger Fortschritt in diesem Thema wird zurückgesetzt.');
+            
+            if (!confirmed) return;
+
+            showLoading();
+            aktuellesThema = themaId;
+
+            // Update UI - markiere aktives Thema
+            document.querySelectorAll('.thema-btn').forEach(btn => {
+                btn.classList.remove('aktiv');
+            });
+            event.target.classList.add('aktiv');
+
+            try {
+                const response = await fetch('/thema_wechseln', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ thema_id: themaId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('themaAnzeige').textContent = data.thema;
+                    document.getElementById('frageText').textContent = data.frage;
+                    
+                    // Reset UI
+                    document.getElementById('antwortInput').value = '';
+                    document.getElementById('feedbackContainer').classList.add('hidden');
+                    document.getElementById('antwortenBtn').classList.remove('hidden');
+                    document.getElementById('weiterBtn').classList.add('hidden');
+                    
+                    hideLoading();
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Es gab einen Fehler beim Themenwechsel.');
+                hideLoading();
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+
+        // Enter-Taste im Namen-Feld
+        document.getElementById('nameInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startLernen();
+            }
+        });
+
+        // Verhindere Zoom bei Doppeltipp auf iOS
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
