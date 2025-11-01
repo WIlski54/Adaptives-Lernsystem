@@ -141,34 +141,108 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            margin-top: 10px;
-        }
-
-        .btn-secondary:active {
-            background: #e0e0e0;
-        }
-
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .question-box {
-            background: #f8f9ff;
-            border-left: 5px solid #667eea;
-            padding: 25px;
-            border-radius: 12px;
-            margin: 20px 0;
-            font-size: 1.15rem;
-            line-height: 1.6;
+        /* CHAT INTERFACE */
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            overflow: hidden;
         }
 
-        /* NEUE STYLES FÜR BILDER */
+        .themen-bar {
+            padding: 15px 20px;
+            background: #f8f9ff;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .themen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .thema-btn {
+            padding: 12px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #667eea;
+            touch-action: manipulation;
+        }
+
+        .thema-btn:active {
+            transform: scale(0.95);
+        }
+
+        .thema-btn.aktiv {
+            background: #667eea;
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 75%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.tutor .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
         .bild-container {
-            margin: 20px 0;
+            margin: 15px 0;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
@@ -182,89 +256,61 @@
         }
 
         .bild-beschreibung {
-            padding: 15px;
+            padding: 12px;
             background: #f8f9ff;
             color: #667eea;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             text-align: center;
             font-weight: 500;
         }
 
-        .feedback-box {
+        .chat-input-area {
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            font-size: 1.05rem;
-            line-height: 1.6;
+            background: white;
+            border-top: 2px solid #e0e0e0;
         }
 
-        .feedback-gut {
-            background: #d4edda;
-            border-left: 5px solid #28a745;
-            color: #155724;
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
-        .feedback-mittel {
-            background: #fff3cd;
-            border-left: 5px solid #ffc107;
-            color: #856404;
-        }
-
-        .feedback-hilfe {
-            background: #f8d7da;
-            border-left: 5px solid #dc3545;
-            color: #721c24;
-        }
-
-        .textarea-field {
-            width: 100%;
-            min-height: 150px;
-            padding: 18px;
+        #chatInput {
+            flex: 1;
+            padding: 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-family: inherit;
-            resize: vertical;
-            transition: all 0.3s;
-            -webkit-appearance: none;
-        }
-
-        .textarea-field:focus {
+            border-radius: 25px;
+            font-size: 1rem;
             outline: none;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        #chatInput:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .themen-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .thema-btn {
-            padding: 20px;
-            background: #f8f9ff;
-            border: 2px solid #667eea;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
+        #sendBtn {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
             font-size: 1rem;
             font-weight: 600;
-            color: #667eea;
-            touch-action: manipulation;
+            cursor: pointer;
+            transition: transform 0.2s;
+            white-space: nowrap;
         }
 
-        .thema-btn:active {
-            transform: scale(0.95);
-            background: #667eea;
-            color: white;
+        #sendBtn:hover {
+            transform: translateY(-2px);
         }
 
-        .thema-btn.aktiv {
-            background: #667eea;
-            color: white;
+        #sendBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .loading {
@@ -293,15 +339,15 @@
             display: none !important;
         }
 
-        .erklärung {
+        .konzept-badge {
+            display: inline-block;
+            padding: 8px 15px;
             background: #e3f2fd;
-            border-left: 5px solid #2196f3;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 15px 0;
-            font-size: 1.05rem;
-            line-height: 1.6;
+            border-radius: 20px;
+            font-size: 0.9rem;
             color: #1976d2;
+            font-weight: 500;
+            margin-bottom: 15px;
         }
 
         @media (max-width: 600px) {
@@ -312,6 +358,10 @@
             .themen-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            .chat-container {
+                height: calc(100vh - 200px);
+            }
         }
     </style>
 </head>
@@ -320,7 +370,7 @@
         <!-- Header -->
         <div class="header">
             <h1>🧬 DNA-Lernassistent</h1>
-            <p>Adaptives Lernsystem für Biologie</p>
+            <p>Dein persönlicher Dialog-Tutor</p>
         </div>
 
         <!-- Status Bar (versteckt bis Start) -->
@@ -343,8 +393,8 @@
         <div id="welcomeScreen" class="card welcome-screen">
             <h2>Willkommen! 👋</h2>
             <p style="margin-bottom: 30px; color: #666;">
-                Ich bin dein persönlicher DNA-Tutor. Ich passe mich an dein Wissensstand an 
-                und stelle dir Fragen, die zu deinem Level passen.
+                Ich bin dein persönlicher DNA-Tutor. Ich helfe dir durch Fragen und Hinweise, 
+                die DNA wirklich zu verstehen - nicht nur auswendig zu lernen!
             </p>
             
             <div class="input-group">
@@ -358,11 +408,10 @@
             </button>
         </div>
 
-        <!-- Lernbereich (versteckt bis Start) -->
-        <div id="lernBereich" class="card hidden">
+        <!-- Chat Interface (versteckt bis Start) -->
+        <div id="chatInterface" class="hidden">
             <!-- Themenauswahl -->
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #667eea; margin-bottom: 15px;">Themen:</h3>
+            <div class="themen-bar">
                 <div class="themen-grid">
                     <button class="thema-btn aktiv" onclick="themaWechseln('1_grundlagen')">
                         🔬 DNA-Grundlagen
@@ -379,71 +428,35 @@
                 </div>
             </div>
 
-            <!-- Aktuelle Frage -->
-            <div id="frageContainer">
-                <div class="question-box" id="frageText">
-                    <!-- Frage wird hier angezeigt -->
+            <!-- Chat Container -->
+            <div class="chat-container">
+                <!-- Chat Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <div id="konzeptAnzeige" class="konzept-badge">
+                        📖 Konzept: <span id="konzeptText">-</span>
+                    </div>
                 </div>
-                
-                <!-- NEUER BILD-CONTAINER -->
-                <div id="bildContainer" class="hidden">
-                    <!-- Bild wird hier angezeigt -->
-                </div>
-            </div>
 
-            <!-- Feedback-Bereich -->
-            <div id="feedbackContainer" class="hidden">
-                <div id="feedbackBox" class="feedback-box">
-                    <!-- Feedback wird hier angezeigt -->
-                </div>
-                <div id="erklärungBox" class="erklärung hidden">
-                    <!-- Zusätzliche Erklärung -->
+                <!-- Chat Input -->
+                <div class="chat-input-area">
+                    <div class="input-wrapper">
+                        <input type="text" id="chatInput" 
+                               placeholder="Schreib deine Antwort oder Frage..." />
+                        <button id="sendBtn" onclick="nachrichtSenden()">Senden</button>
+                    </div>
                 </div>
             </div>
-
-            <!-- Antwort-Eingabe -->
-            <div class="input-group">
-                <label for="antwortInput">Deine Antwort:</label>
-                <textarea id="antwortInput" class="textarea-field" placeholder="Schreib hier deine Antwort..."></textarea>
-            </div>
-
-            <button class="btn btn-primary" id="antwortenBtn" onclick="antwortSenden()">
-                Antwort absenden ✓
-            </button>
-
-            <button class="btn btn-secondary hidden" id="weiterBtn" onclick="zumNächsten()">
-                Weiter zur nächsten Frage →
-            </button>
         </div>
 
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="card loading hidden">
             <div class="spinner"></div>
-            <p>KI denkt nach...</p>
+            <p>Tutor denkt nach...</p>
         </div>
     </div>
 
     <script>
         let aktuellesThema = '1_grundlagen';
-
-        // NEUE FUNKTION: Bild anzeigen
-        function zeigeBild(bildInfo) {
-            const bildContainer = document.getElementById('bildContainer');
-            
-            if (bildInfo && bildInfo.url) {
-                bildContainer.innerHTML = `
-                    <div class="bild-container">
-                        <img src="${bildInfo.url}" alt="${bildInfo.beschreibung}">
-                        <div class="bild-beschreibung">
-                            📊 ${bildInfo.beschreibung}
-                        </div>
-                    </div>
-                `;
-                bildContainer.classList.remove('hidden');
-            } else {
-                bildContainer.classList.add('hidden');
-            }
-        }
 
         async function startLernen() {
             const name = document.getElementById('nameInput').value.trim();
@@ -469,16 +482,18 @@
                 if (data.success) {
                     document.getElementById('schülerName').textContent = name;
                     document.getElementById('themaAnzeige').textContent = data.thema;
-                    document.getElementById('frageText').textContent = data.frage;
+                    document.getElementById('konzeptText').textContent = data.konzept;
 
-                    // NEUE ZEILE: Zeige Bild falls vorhanden
-                    zeigeBild(data.bild);
+                    // Erste Tutor-Nachricht anzeigen
+                    addMessage('tutor', data.nachricht, data.bild);
 
                     // UI umschalten
                     document.getElementById('welcomeScreen').classList.add('hidden');
                     document.getElementById('statusBar').classList.remove('hidden');
-                    document.getElementById('lernBereich').classList.remove('hidden');
+                    document.getElementById('chatInterface').classList.remove('hidden');
                     hideLoading();
+                    
+                    document.getElementById('chatInput').focus();
                 }
             } catch (error) {
                 console.error('Fehler:', error);
@@ -487,92 +502,88 @@
             }
         }
 
-        async function antwortSenden() {
-            const antwort = document.getElementById('antwortInput').value.trim();
+        async function nachrichtSenden() {
+            const nachricht = document.getElementById('chatInput').value.trim();
             
-            if (!antwort) {
-                alert('Bitte gib eine Antwort ein! 📝');
+            if (!nachricht) {
                 return;
             }
 
+            // Schüler-Nachricht anzeigen
+            addMessage('user', nachricht);
+            document.getElementById('chatInput').value = '';
+            document.getElementById('sendBtn').disabled = true;
+
             showLoading();
-            document.getElementById('antwortenBtn').disabled = true;
 
             try {
-                const response = await fetch('/antworten', {
+                const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ antwort: antwort })
+                    body: JSON.stringify({ nachricht: nachricht })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Zeige Feedback
-                    const feedbackBox = document.getElementById('feedbackBox');
-                    feedbackBox.textContent = data.feedback;
-                    
-                    // Feedback-Farbe basierend auf Verständnis
-                    feedbackBox.className = 'feedback-box';
-                    if (data.verständnis === 'gut') {
-                        feedbackBox.classList.add('feedback-gut');
-                    } else if (data.verständnis === 'mittel') {
-                        feedbackBox.classList.add('feedback-mittel');
-                    } else {
-                        feedbackBox.classList.add('feedback-hilfe');
-                    }
-
-                    // Zeige Erklärung falls vorhanden
-                    const erklärungBox = document.getElementById('erklärungBox');
-                    if (data.erklärung) {
-                        erklärungBox.textContent = data.erklärung;
-                        erklärungBox.classList.remove('hidden');
-                    } else {
-                        erklärungBox.classList.add('hidden');
-                    }
-
-                    // Aktualisiere nächste Frage
-                    document.getElementById('frageText').textContent = data.nächste_frage;
-                    
-                    // NEUE ZEILE: Zeige Bild zur nächsten Frage falls vorhanden
-                    zeigeBild(data.bild);
+                    // Tutor-Antwort anzeigen
+                    addMessage('tutor', data.nachricht, data.bild);
 
                     // Update Punkte
                     document.getElementById('punkteAnzeige').textContent = data.punkte + ' Punkte';
 
-                    // UI umschalten
-                    document.getElementById('feedbackContainer').classList.remove('hidden');
-                    document.getElementById('antwortenBtn').classList.add('hidden');
-                    document.getElementById('weiterBtn').classList.remove('hidden');
+                    // Update Konzept falls geändert
+                    if (data.neues_konzept) {
+                        document.getElementById('konzeptText').textContent = data.neues_konzept;
+                    }
 
                     hideLoading();
+                    document.getElementById('sendBtn').disabled = false;
+                    document.getElementById('chatInput').focus();
                 }
             } catch (error) {
                 console.error('Fehler:', error);
                 alert('Es gab einen Fehler. Bitte versuche es nochmal.');
                 hideLoading();
-                document.getElementById('antwortenBtn').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
             }
         }
 
-        function zumNächsten() {
-            // Reset UI
-            document.getElementById('antwortInput').value = '';
-            document.getElementById('feedbackContainer').classList.add('hidden');
-            document.getElementById('antwortenBtn').classList.remove('hidden');
-            document.getElementById('antwortenBtn').disabled = false;
-            document.getElementById('weiterBtn').classList.add('hidden');
+        function addMessage(type, text, bild = null) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
             
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            let content = `<div class="message-bubble">${text.replace(/\n/g, '<br>')}</div>`;
+            
+            // Bild hinzufügen falls vorhanden
+            if (bild && bild.url) {
+                content += `
+                    <div class="bild-container">
+                        <img src="${bild.url}" alt="${bild.beschreibung}">
+                        <div class="bild-beschreibung">
+                            📊 ${bild.beschreibung}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = content;
+            messagesDiv.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
         async function themaWechseln(themaId) {
             if (aktuellesThema === themaId) return;
 
-            const confirmed = confirm('Möchtest du wirklich das Thema wechseln? Dein bisheriger Fortschritt in diesem Thema wird zurückgesetzt.');
+            const confirmed = confirm('Möchtest du wirklich das Thema wechseln?');
             
             if (!confirmed) return;
 
@@ -598,18 +609,20 @@
 
                 if (data.success) {
                     document.getElementById('themaAnzeige').textContent = data.thema;
-                    document.getElementById('frageText').textContent = data.frage;
+                    document.getElementById('konzeptText').textContent = data.konzept;
                     
-                    // NEUE ZEILE: Zeige Bild zur neuen Frage falls vorhanden
-                    zeigeBild(data.bild);
+                    // Clear Chat
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div id="konzeptAnzeige" class="konzept-badge">
+                            📖 Konzept: <span id="konzeptText">${data.konzept}</span>
+                        </div>
+                    `;
                     
-                    // Reset UI
-                    document.getElementById('antwortInput').value = '';
-                    document.getElementById('feedbackContainer').classList.add('hidden');
-                    document.getElementById('antwortenBtn').classList.remove('hidden');
-                    document.getElementById('weiterBtn').classList.add('hidden');
+                    // Erste Nachricht
+                    addMessage('tutor', data.nachricht, data.bild);
                     
                     hideLoading();
+                    document.getElementById('chatInput').focus();
                 }
             } catch (error) {
                 console.error('Fehler:', error);
@@ -630,6 +643,13 @@
         document.getElementById('nameInput')?.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 startLernen();
+            }
+        });
+
+        // Enter-Taste im Chat
+        document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                nachrichtSenden();
             }
         });
 
