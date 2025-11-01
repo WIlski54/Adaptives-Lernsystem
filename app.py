@@ -1,295 +1,292 @@
 from flask import Flask, render_template, request, jsonify, session
+import openai
 import os
-import json
-from datetime import datetime
-from openai import OpenAI
+import secrets
+from image_resources import finde_passendes_bild
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dna-learning-secret-key-change-in-production')
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# OpenAI API Client
-client = OpenAI(
-    api_key=os.environ.get('OPENAI_API_KEY', '')
-)
+# OpenAI API Key
+openai.api_key = os.environ.get('OPENAI_API_KEY')
 
-# DNA-Curriculum für Klasse 9/10
-CURRICULUM = {
-    "1_grundlagen": {
-        "titel": "DNA-Grundlagen",
-        "themen": ["Nukleotide", "Doppelhelix-Struktur", "Basenpaarung (A-T, G-C)"],
-        "schwierigkeit": 1
+# Themen-Definitionen
+THEMEN = {
+    '1_grundlagen': {
+        'name': 'DNA-Grundlagen',
+        'beschreibung': 'Aufbau und Struktur der DNA'
     },
-    "2_aufbau": {
-        "titel": "Chromosomen & Gene",
-        "themen": ["Chromosomen im Zellkern", "Gene als DNA-Abschnitte", "Erbinformation"],
-        "schwierigkeit": 2
+    '2_aufbau': {
+        'name': 'Chromosomen und Gene',
+        'beschreibung': 'Von Chromosomen zu Genen'
     },
-    "3_replikation": {
-        "titel": "DNA-Verdopplung",
-        "themen": ["Replikation vor Zellteilung", "Identische Kopien", "Enzyme"],
-        "schwierigkeit": 3
+    '3_replikation': {
+        'name': 'DNA-Replikation',
+        'beschreibung': 'Verdopplung der DNA'
     },
-    "4_vererbung": {
-        "titel": "Vererbung & Merkmale",
-        "themen": ["Mendel-Regeln (vereinfacht)", "Allele", "Dominant/Rezessiv"],
-        "schwierigkeit": 2
+    '4_vererbung': {
+        'name': 'Vererbung und Merkmale',
+        'beschreibung': 'Wie Merkmale vererbt werden'
     }
 }
 
-def get_system_prompt():
-    """Erstellt den System-Prompt für OpenAI"""
-    return """Du bist ein geduldiger, motivierender Biologielehrer für die Klassen 9 und 10.
+# System-Prompt für OpenAI
+SYSTEM_PROMPT = """Du bist ein geduldiger, freundlicher Biologie-Tutor für Schüler der Klassen 9-10.
 
 WICHTIGE REGELN:
-- Erkläre auf Niveau Sekundarstufe I (KEINE Oberstufen-Konzepte!)
-- Verwende einfache, klare Sprache
-- Nutze Alltagsbeispiele und Analogien
-- Sei ermutigend und geduldig
-- Passe Erklärungen an das Verständnis des Schülers an
-- Bei falschen Antworten: Erkläre WARUM etwas falsch ist, dann leite zur richtigen Antwort
+1. Sei SEHR STRENG bei wissenschaftlichen Begriffen - akzeptiere nur 100% korrekte Schreibweisen
+   - "Cytosin" ist korrekt, "Cytosil" oder "Cytozin" sind FALSCH
+   - "Thymin" ist korrekt, "Timin" ist FALSCH
+   
+2. Stelle adaptive Fragen basierend auf dem Verständnis des Schülers:
+   - Bei gutem Verständnis: Stelle schwierigere Fragen
+   - Bei mittlerem Verständnis: Bleibe auf dem Level
+   - Bei Schwierigkeiten: Stelle einfachere Fragen und erkläre mehr
 
-KRITISCH - FACHBEGRIFFE:
-- Achte SEHR GENAU auf korrekte Schreibweise von Fachbegriffen!
-- Bei falscher Schreibweise (z.B. "Cytosil" statt "Cytosin"): 
-  * Bewerte als "mittel" statt "gut"
-  * Korrigiere die Schreibweise im Feedback
-  * Erkläre: "Du meinst Cytosin (mit -n am Ende). Achte auf die korrekte Schreibweise!"
-- Wichtige Begriffe: Adenin, Guanin, Cytosin, Thymin, Nukleotid, Chromosom, Gen, Allel, etc.
+3. Gib konstruktives Feedback:
+   - Bei richtigen Antworten: Kurzes Lob + nächste Frage
+   - Bei teilweise richtigen Antworten: Was war gut + was fehlt
+   - Bei falschen Antworten: Korrektur + Erklärung
 
-THEMA: DNA als zentraler Baustein der Vererbung
+4. Passe die Schwierigkeit an das Niveau an"""
 
-ABLAUF:
-1. Stelle eine passende Frage zum aktuellen Thema
-2. Bewerte die Antwort des Schülers
-3. Gib konstruktives Feedback
-4. Bei Bedarf: Erkläre das Konzept neu oder tiefer
-5. Stelle die nächste Frage (angepasst an Verständnisniveau)
-
-Antworte IMMER im JSON-Format:
-{
-    "feedback": "Dein Feedback zur Antwort",
-    "erklärung": "Zusätzliche Erklärung (wenn nötig)",
-    "nächste_frage": "Die nächste Frage",
-    "schwierigkeit": 1-4,
-    "verständnis_niveau": "gut/mittel/braucht_hilfe"
-}"""
-
-def call_openai(schüler_historie, aktuelles_thema, schüler_antwort=None):
-    """Ruft OpenAI API auf und gibt strukturierte Antwort zurück"""
-    
-    # Baue Conversation History auf
-    messages = [
-        {
-            "role": "system",
-            "content": get_system_prompt()
-        }
-    ]
-    
-    # Füge bisherigen Verlauf hinzu
-    for eintrag in schüler_historie:
-        if eintrag.get('typ') == 'frage':
-            messages.append({
-                "role": "assistant",
-                "content": eintrag['inhalt']
-            })
-        elif eintrag.get('typ') == 'antwort':
-            messages.append({
-                "role": "user",
-                "content": eintrag['inhalt']
-            })
-    
-    # Aktuelle Schülerantwort
-    if schüler_antwort:
-        user_message = f"""THEMA: {aktuelles_thema['titel']}
-
-Schülerantwort: {schüler_antwort}
-
-Bewerte die Antwort, gib Feedback und stelle die nächste Frage."""
-    else:
-        # Erste Frage zum Thema
-        user_message = f"""THEMA: {aktuelles_thema['titel']}
-Unterthemen: {', '.join(aktuelles_thema['themen'])}
-
-Stelle die erste Einstiegsfrage zu diesem Thema."""
-    
-    messages.append({
-        "role": "user",
-        "content": user_message
-    })
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Günstiger und schnell, alternativ: "gpt-4o"
-            messages=messages,
-            max_tokens=1000,
-            temperature=0.7,
-            response_format={"type": "json_object"}  # Erzwingt JSON-Ausgabe
-        )
-        
-        # Parse JSON response
-        response_text = response.choices[0].message.content
-        
-        # Entferne mögliche Markdown-Backticks
-        response_text = response_text.replace('```json', '').replace('```', '').strip()
-        
-        result = json.loads(response_text)
-        return result
-        
-    except Exception as e:
-        print(f"Fehler bei OpenAI API: {e}")
-        # Fallback
-        return {
-            "feedback": "Entschuldigung, es gab einen technischen Fehler. Versuche es bitte nochmal.",
-            "erklärung": "",
-            "nächste_frage": "Lass uns nochmal von vorne beginnen.",
-            "schwierigkeit": 1,
-            "verständnis_niveau": "mittel"
-        }
 
 @app.route('/')
 def index():
-    """Startseite mit Schüler-Login"""
+    """Hauptseite"""
     return render_template('index.html')
 
+
 @app.route('/start', methods=['POST'])
-def start_learning():
+def start():
     """Startet eine neue Lernsession"""
-    data = request.json
-    schüler_name = data.get('name', 'Schüler')
-    
-    # Initialisiere Session
-    session['schüler_name'] = schüler_name
-    session['aktuelles_thema'] = '1_grundlagen'
-    session['historie'] = []
-    session['start_zeit'] = datetime.now().isoformat()
-    session['punkte'] = 0
-    
-    # Hole erstes Thema
-    thema = CURRICULUM['1_grundlagen']
-    
-    # Generiere erste Frage
-    antwort = call_openai([], thema)
-    
-    # Speichere in Historie
-    session['historie'] = [{
-        'typ': 'frage',
-        'inhalt': antwort['nächste_frage'],
-        'zeit': datetime.now().isoformat()
-    }]
-    session.modified = True
-    
-    return jsonify({
-        'success': True,
-        'thema': thema['titel'],
-        'frage': antwort['nächste_frage']
-    })
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        
+        if not name:
+            return jsonify({'success': False, 'error': 'Bitte Namen eingeben'}), 400
+        
+        # Session initialisieren
+        session['name'] = name
+        session['punkte'] = 0
+        session['aktuelles_thema'] = '1_grundlagen'
+        session['fragen_historie'] = []
+        session['schwierigkeit'] = 'mittel'
+        
+        # Erste Frage generieren
+        thema_id = '1_grundlagen'
+        thema_info = THEMEN[thema_id]
+        
+        prompt = f"""Thema: {thema_info['name']} - {thema_info['beschreibung']}
+
+Erstelle eine erste Frage auf MITTLEREM Niveau für einen Schüler der 9./10. Klasse.
+Die Frage soll das Grundverständnis testen.
+
+Antworte NUR mit der Frage, ohne zusätzlichen Text."""
+
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.7
+        )
+        
+        erste_frage = response.choices[0].message.content.strip()
+        session['aktuelle_frage'] = erste_frage
+        session['fragen_historie'].append({
+            'frage': erste_frage,
+            'thema': thema_id
+        })
+        
+        # BILDINTEGRATION: Suche passendes Bild
+        bild_info = finde_passendes_bild(erste_frage, thema_id)
+        
+        response_data = {
+            'success': True,
+            'thema': thema_info['name'],
+            'frage': erste_frage
+        }
+        
+        if bild_info:
+            response_data['bild'] = bild_info
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Fehler in /start: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/antworten', methods=['POST'])
 def antworten():
-    """Verarbeitet Schülerantwort und gibt Feedback + neue Frage"""
-    data = request.json
-    antwort = data.get('antwort', '')
-    
-    if not antwort.strip():
-        return jsonify({'error': 'Bitte gib eine Antwort ein.'}), 400
-    
-    # Hole aktuelle Session-Daten
-    historie = session.get('historie', [])
-    aktuelles_thema_id = session.get('aktuelles_thema', '1_grundlagen')
-    thema = CURRICULUM[aktuelles_thema_id]
-    
-    # Speichere Antwort in Historie
-    historie.append({
-        'typ': 'antwort',
-        'inhalt': antwort,
-        'zeit': datetime.now().isoformat()
-    })
-    
-    # Rufe OpenAI auf
-    openai_response = call_openai(historie, thema, antwort)
-    
-    # Speichere neue Frage in Historie
-    historie.append({
-        'typ': 'frage',
-        'inhalt': openai_response['nächste_frage'],
-        'zeit': datetime.now().isoformat(),
-        'verständnis': openai_response['verständnis_niveau']
-    })
-    
-    # Update Session
-    session['historie'] = historie
-    
-    # Punkte vergeben
-    if openai_response['verständnis_niveau'] == 'gut':
-        session['punkte'] = session.get('punkte', 0) + 10
-    elif openai_response['verständnis_niveau'] == 'mittel':
-        session['punkte'] = session.get('punkte', 0) + 5
-    
-    session.modified = True
-    
-    return jsonify({
-        'success': True,
-        'feedback': openai_response['feedback'],
-        'erklärung': openai_response.get('erklärung', ''),
-        'nächste_frage': openai_response['nächste_frage'],
-        'punkte': session.get('punkte', 0),
-        'verständnis': openai_response['verständnis_niveau']
-    })
+    """Bewertet die Antwort und generiert die nächste Frage"""
+    try:
+        data = request.json
+        antwort = data.get('antwort', '').strip()
+        
+        if not antwort:
+            return jsonify({'success': False, 'error': 'Bitte Antwort eingeben'}), 400
+        
+        aktuelle_frage = session.get('aktuelle_frage', '')
+        aktueller_schwierigkeit = session.get('schwierigkeit', 'mittel')
+        aktuelles_thema = session.get('aktuelles_thema', '1_grundlagen')
+        thema_info = THEMEN[aktuelles_thema]
+        
+        # Antwort bewerten
+        bewertungs_prompt = f"""Frage: {aktuelle_frage}
+
+Schüler-Antwort: {antwort}
+
+Bewerte die Antwort und gib ein JSON zurück:
+{{
+    "verständnis": "gut" oder "mittel" oder "hilfe",
+    "feedback": "Kurzes Feedback (1-2 Sätze)",
+    "erklärung": "Erklärung falls verständnis nicht 'gut' ist, sonst null",
+    "punkte": 10 bei "gut", 5 bei "mittel", 0 bei "hilfe"
+}}
+
+Antworte NUR mit dem JSON, nichts anderes!"""
+
+        bewertung_response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": bewertungs_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.7
+        )
+        
+        # JSON parsen
+        bewertung_text = bewertung_response.choices[0].message.content.strip()
+        bewertung_text = bewertung_text.replace('```json', '').replace('```', '').strip()
+        
+        import json
+        bewertung = json.loads(bewertung_text)
+        
+        verständnis = bewertung.get('verständnis', 'mittel')
+        feedback_text = bewertung.get('feedback', '')
+        erklärung = bewertung.get('erklärung', None)
+        punkte_gewinn = bewertung.get('punkte', 0)
+        
+        # Punkte aktualisieren
+        session['punkte'] = session.get('punkte', 0) + punkte_gewinn
+        
+        # Schwierigkeit anpassen
+        if verständnis == 'gut':
+            neue_schwierigkeit = 'schwer'
+        elif verständnis == 'hilfe':
+            neue_schwierigkeit = 'leicht'
+        else:
+            neue_schwierigkeit = aktueller_schwierigkeit
+        
+        session['schwierigkeit'] = neue_schwierigkeit
+        
+        # Nächste Frage generieren (ADAPTIV!)
+        naechste_frage_prompt = f"""Thema: {thema_info['name']}
+
+Bisheriges Verständnis: {verständnis}
+Neue Schwierigkeit: {neue_schwierigkeit}
+
+Generiere die NÄCHSTE Frage für diesen Schüler.
+
+- Bei 'schwer': Stelle eine anspruchsvolle Frage (Transfer, Zusammenhänge)
+- Bei 'mittel': Stelle eine normale Frage (Verständnis)
+- Bei 'leicht': Stelle eine einfache Frage (Grundwissen)
+
+Antworte NUR mit der Frage, ohne zusätzlichen Text."""
+
+        naechste_frage_response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": naechste_frage_prompt}
+            ],
+            max_tokens=200,
+            temperature=0.7
+        )
+        
+        nächste_frage = naechste_frage_response.choices[0].message.content.strip()
+        session['aktuelle_frage'] = nächste_frage
+        
+        # BILDINTEGRATION: Suche passendes Bild zur nächsten Frage
+        bild_info = finde_passendes_bild(nächste_frage, aktuelles_thema)
+        
+        response_data = {
+            'success': True,
+            'feedback': feedback_text,
+            'verständnis': verständnis,
+            'erklärung': erklärung,
+            'nächste_frage': nächste_frage,
+            'punkte': session['punkte']
+        }
+        
+        if bild_info:
+            response_data['bild'] = bild_info
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Fehler in /antworten: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/thema_wechseln', methods=['POST'])
 def thema_wechseln():
-    """Wechselt zu einem anderen Curriculum-Thema"""
-    data = request.json
-    neues_thema_id = data.get('thema_id')
-    
-    if neues_thema_id not in CURRICULUM:
-        return jsonify({'error': 'Ungültiges Thema'}), 400
-    
-    session['aktuelles_thema'] = neues_thema_id
-    session['historie'] = []  # Reset Historie für neues Thema
-    session.modified = True
-    
-    thema = CURRICULUM[neues_thema_id]
-    
-    # Generiere erste Frage für neues Thema
-    antwort = call_openai([], thema)
-    
-    session['historie'] = [{
-        'typ': 'frage',
-        'inhalt': antwort['nächste_frage'],
-        'zeit': datetime.now().isoformat()
-    }]
-    session.modified = True
-    
-    return jsonify({
-        'success': True,
-        'thema': thema['titel'],
-        'frage': antwort['nächste_frage']
-    })
+    """Wechselt das Thema"""
+    try:
+        data = request.json
+        thema_id = data.get('thema_id', '1_grundlagen')
+        
+        if thema_id not in THEMEN:
+            return jsonify({'success': False, 'error': 'Ungültiges Thema'}), 400
+        
+        thema_info = THEMEN[thema_id]
+        session['aktuelles_thema'] = thema_id
+        session['schwierigkeit'] = 'mittel'  # Reset Schwierigkeit
+        
+        # Neue erste Frage für das Thema
+        prompt = f"""Thema: {thema_info['name']} - {thema_info['beschreibung']}
 
-@app.route('/fortschritt')
-def fortschritt():
-    """Zeigt Lernfortschritt des Schülers"""
-    historie = session.get('historie', [])
-    
-    # Analysiere Verständnisniveau
-    verständnis_levels = [h.get('verständnis', 'mittel') for h in historie if h.get('typ') == 'frage']
-    
-    gut_count = verständnis_levels.count('gut')
-    mittel_count = verständnis_levels.count('mittel')
-    hilfe_count = verständnis_levels.count('braucht_hilfe')
-    
-    return jsonify({
-        'schüler_name': session.get('schüler_name', ''),
-        'punkte': session.get('punkte', 0),
-        'fragen_beantwortet': len([h for h in historie if h.get('typ') == 'antwort']),
-        'verständnis': {
-            'gut': gut_count,
-            'mittel': mittel_count,
-            'braucht_hilfe': hilfe_count
-        },
-        'aktuelles_thema': CURRICULUM[session.get('aktuelles_thema', '1_grundlagen')]['titel']
-    })
+Erstelle eine erste Frage auf MITTLEREM Niveau für einen Schüler der 9./10. Klasse.
+
+Antworte NUR mit der Frage, ohne zusätzlichen Text."""
+
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.7
+        )
+        
+        neue_frage = response.choices[0].message.content.strip()
+        session['aktuelle_frage'] = neue_frage
+        
+        # BILDINTEGRATION: Suche passendes Bild
+        bild_info = finde_passendes_bild(neue_frage, thema_id)
+        
+        response_data = {
+            'success': True,
+            'thema': thema_info['name'],
+            'frage': neue_frage
+        }
+        
+        if bild_info:
+            response_data['bild'] = bild_info
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Fehler in /thema_wechseln: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

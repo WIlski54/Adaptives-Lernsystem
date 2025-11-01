@@ -166,6 +166,30 @@
             line-height: 1.6;
         }
 
+        /* NEUE STYLES FÜR BILDER */
+        .bild-container {
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            background: white;
+        }
+
+        .bild-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .bild-beschreibung {
+            padding: 15px;
+            background: #f8f9ff;
+            color: #667eea;
+            font-size: 0.95rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
         .feedback-box {
             padding: 20px;
             border-radius: 12px;
@@ -257,7 +281,7 @@
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
@@ -266,7 +290,7 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .erklärung {
@@ -277,31 +301,16 @@
             margin: 15px 0;
             font-size: 1.05rem;
             line-height: 1.6;
+            color: #1976d2;
         }
 
-        /* iPad-spezifische Optimierungen */
-        @media (min-width: 768px) {
-            .header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .card {
-                padding: 40px;
-            }
-        }
-
-        /* Landscape-Modus */
-        @media (orientation: landscape) and (max-height: 600px) {
-            body {
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 15px;
-            }
-            
+        @media (max-width: 600px) {
             .header h1 {
                 font-size: 1.5rem;
+            }
+            
+            .themen-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -311,47 +320,49 @@
         <!-- Header -->
         <div class="header">
             <h1>🧬 DNA-Lernassistent</h1>
-            <p>Dein persönlicher Tutor für Vererbung</p>
+            <p>Adaptives Lernsystem für Biologie</p>
         </div>
 
-        <!-- Status Bar (nur im Lernmodus sichtbar) -->
+        <!-- Status Bar (versteckt bis Start) -->
         <div id="statusBar" class="status-bar hidden">
             <div class="status-item">
                 <span class="emoji">👤</span>
-                <span id="schülerName">--</span>
+                <span id="schülerName">-</span>
+            </div>
+            <div class="status-item">
+                <span class="emoji">📚</span>
+                <span id="themaAnzeige">-</span>
             </div>
             <div class="status-item">
                 <span class="emoji">⭐</span>
                 <span id="punkteAnzeige">0 Punkte</span>
             </div>
-            <div class="status-item">
-                <span class="emoji">📚</span>
-                <span id="themaAnzeige">--</span>
-            </div>
         </div>
 
-        <!-- Willkommensbildschirm -->
+        <!-- Welcome Screen -->
         <div id="welcomeScreen" class="card welcome-screen">
             <h2>Willkommen! 👋</h2>
-            <p style="margin-bottom: 30px; color: #666; font-size: 1.1rem;">
-                Ich bin dein persönlicher DNA-Tutor und passe mich deinem Lernfortschritt an.
+            <p style="margin-bottom: 30px; color: #666;">
+                Ich bin dein persönlicher DNA-Tutor. Ich passe mich an dein Wissensstand an 
+                und stelle dir Fragen, die zu deinem Level passen.
             </p>
             
             <div class="input-group">
                 <label for="nameInput">Wie heißt du?</label>
-                <input type="text" id="nameInput" class="input-field" placeholder="Dein Name" autocomplete="name">
+                <input type="text" id="nameInput" class="input-field" 
+                       placeholder="Dein Name..." autofocus>
             </div>
-
+            
             <button class="btn btn-primary" onclick="startLernen()">
                 Los geht's! 🚀
             </button>
         </div>
 
-        <!-- Lernbereich -->
+        <!-- Lernbereich (versteckt bis Start) -->
         <div id="lernBereich" class="card hidden">
-            <!-- Themenwahl -->
-            <div id="themenWahl" style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 15px; color: #667eea;">Wähle dein Thema:</h3>
+            <!-- Themenauswahl -->
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">Themen:</h3>
                 <div class="themen-grid">
                     <button class="thema-btn aktiv" onclick="themaWechseln('1_grundlagen')">
                         🔬 DNA-Grundlagen
@@ -372,6 +383,11 @@
             <div id="frageContainer">
                 <div class="question-box" id="frageText">
                     <!-- Frage wird hier angezeigt -->
+                </div>
+                
+                <!-- NEUER BILD-CONTAINER -->
+                <div id="bildContainer" class="hidden">
+                    <!-- Bild wird hier angezeigt -->
                 </div>
             </div>
 
@@ -410,6 +426,25 @@
     <script>
         let aktuellesThema = '1_grundlagen';
 
+        // NEUE FUNKTION: Bild anzeigen
+        function zeigeBild(bildInfo) {
+            const bildContainer = document.getElementById('bildContainer');
+            
+            if (bildInfo && bildInfo.url) {
+                bildContainer.innerHTML = `
+                    <div class="bild-container">
+                        <img src="${bildInfo.url}" alt="${bildInfo.beschreibung}">
+                        <div class="bild-beschreibung">
+                            📊 ${bildInfo.beschreibung}
+                        </div>
+                    </div>
+                `;
+                bildContainer.classList.remove('hidden');
+            } else {
+                bildContainer.classList.add('hidden');
+            }
+        }
+
         async function startLernen() {
             const name = document.getElementById('nameInput').value.trim();
             
@@ -435,6 +470,9 @@
                     document.getElementById('schülerName').textContent = name;
                     document.getElementById('themaAnzeige').textContent = data.thema;
                     document.getElementById('frageText').textContent = data.frage;
+
+                    // NEUE ZEILE: Zeige Bild falls vorhanden
+                    zeigeBild(data.bild);
 
                     // UI umschalten
                     document.getElementById('welcomeScreen').classList.add('hidden');
@@ -497,6 +535,9 @@
 
                     // Aktualisiere nächste Frage
                     document.getElementById('frageText').textContent = data.nächste_frage;
+                    
+                    // NEUE ZEILE: Zeige Bild zur nächsten Frage falls vorhanden
+                    zeigeBild(data.bild);
 
                     // Update Punkte
                     document.getElementById('punkteAnzeige').textContent = data.punkte + ' Punkte';
@@ -558,6 +599,9 @@
                 if (data.success) {
                     document.getElementById('themaAnzeige').textContent = data.thema;
                     document.getElementById('frageText').textContent = data.frage;
+                    
+                    // NEUE ZEILE: Zeige Bild zur neuen Frage falls vorhanden
+                    zeigeBild(data.bild);
                     
                     // Reset UI
                     document.getElementById('antwortInput').value = '';
