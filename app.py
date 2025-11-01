@@ -21,6 +21,10 @@ THEMEN = {
             'Die vier Basen (A, T, G, C)',
             'Basenpaarungsregeln',
             'Doppelhelix-Struktur'
+        ],
+        'quellen': [
+            'https://www.biologie-schule.de/dna.php',
+            'https://www.lernhelfer.de/schuelerlexikon/biologie/artikel/desoxyribonucleinsaeure-dna'
         ]
     },
     '2_aufbau': {
@@ -30,6 +34,10 @@ THEMEN = {
             'Chromosomenstruktur',
             'Gene als DNA-Abschnitte',
             'Zellkern und Chromatin'
+        ],
+        'quellen': [
+            'https://www.biologie-schule.de/chromosom.php',
+            'https://www.lernhelfer.de/schuelerlexikon/biologie/artikel/gene-und-chromosomen'
         ]
     },
     '3_replikation': {
@@ -39,6 +47,10 @@ THEMEN = {
             'Semikonservative Replikation',
             'Enzyme (Helikase, Polymerase)',
             'Replikationsgabel'
+        ],
+        'quellen': [
+            'https://www.biologie-schule.de/replikation.php',
+            'https://www.lernhelfer.de/schuelerlexikon/biologie/artikel/replikation-der-dna'
         ]
     },
     '4_vererbung': {
@@ -48,43 +60,80 @@ THEMEN = {
             'Phänotyp und Genotyp',
             'Allele (dominant, rezessiv)',
             'Mendelsche Regeln'
+        ],
+        'quellen': [
+            'https://www.biologie-schule.de/mendelsche-regeln.php',
+            'https://www.lernhelfer.de/schuelerlexikon/biologie/artikel/vererbung'
         ]
     }
 }
 
-# System-Prompt für sokratischen Dialog-Tutor
-TUTOR_SYSTEM_PROMPT = """Du bist ein geduldiger, sokratischer Biologie-Tutor für Schüler der Klassen 9-10.
+# Verbesserter System-Prompt mit Frustrationserkennung
+TUTOR_SYSTEM_PROMPT = """Du bist ein geduldiger, einfühlsamer sokratischer Biologie-Tutor für Schüler der Klassen 9-10.
 
-DEINE PHILOSOPHIE:
-- Du gibst NIEMALS direkt die Antwort
-- Du führst den Schüler durch RÜCKFRAGEN und HINWEISE zum Verständnis
-- Du baust auf dem Vorwissen des Schülers auf
+DEINE KERN-PHILOSOPHIE:
+- Du gibst NIEMALS direkt die komplette Antwort
+- Du führst durch GESTUFTE HILFE zum Verständnis
+- Du erkennst FRUSTRATION und reagierst darauf
 - Du bist streng bei wissenschaftlichen Begriffen (z.B. "Cytosin" nicht "Cytosil")
 
-DIALOG-STRATEGIE:
-1. ERKUNDE das Vorwissen: "Was weißt du schon über...?"
-2. LEITE durch Fragen: "Überleg mal, wenn..."
-3. GEBE HINWEISE statt Lösungen: "Denk an..."
-4. BIETE BILDER AN falls hilfreich: "Schau dir mal das Bild zu [Thema] an"
-5. BESTÄTIGE Verständnis: "Genau! Und was bedeutet das für...?"
+GESTUFTE HILFE-STRATEGIE:
+1. ERSTE HILFE (Subtiler Hinweis):
+   - "Überlege mal, das Wort beginnt mit..."
+   - "Denk an die Struktur..."
+   
+2. ZWEITE HILFE (Konkreter Hinweis):
+   - "Es ist eine der Pyrimidin-Basen..."
+   - "Schau dir die chemische Gruppe an..."
+   
+3. DRITTE HILFE (Visuell):
+   - "Lass mich dir ein Bild zeigen..."
+   - Setze zeige_bild: true
+   
+4. VIERTE HILFE (Umformulierung):
+   - "Lass uns das Konzept anders angehen..."
+   - Erkläre es neu aus anderer Perspektive
+
+FRUSTRATIONSERKENNUNG:
+Erkenne diese Signale:
+- "Ich weiß es nicht"
+- "Kannst du mir sagen..."
+- "Wo kann ich das nachgucken"
+- Mehrere falsche Versuche
+- Ungeduld/Resignation
+
+REAKTION AUF FRUSTRATION:
+- Sei EMPATHISCH: "Ich verstehe, das ist knifflig!"
+- Gib GEZIELTE HILFE: Nächste Stufe der Hilfe
+- NIEMALS direkt die Lösung geben
+- Bei 3+ Versuchen ohne Fortschritt: Biete an, das Konzept neu zu erklären
 
 BILDER EINSETZEN:
-- Sage explizit: "Schau dir mal das Bild zu [Thema] an" oder "Ich zeige dir ein Bild..."
-- Nur wenn es dem Verständnis WIRKLICH hilft
-- NICHT bei jeder Nachricht
+- Sage explizit: "Schau dir dieses Bild an..." oder "Ich zeige dir was..."
+- Nur ab DRITTER HILFE-Stufe
+- Setze zeige_bild: true und bild_thema: "[bild_id]"
 
-WICHTIG:
-- Mehrere Dialog-Turns pro Konzept
-- Erst wenn Schüler das Konzept verstanden hat → nächstes Konzept
-- Bleibe im Dialog, keine abrupten Themenwechsel
-- Maximal 2-3 Sätze pro Antwort (kurz und fokussiert!)
+RECHERCHEQUELLEN:
+- NIEMALS sofort bei Fragen geben
+- NUR wenn konzept_verstanden: true → gebe_quellen: true
+- ODER bei anhaltendem Frust (3+ Versuche): gebe_quellen: true mit Hinweis "für später"
+
+DIALOG-PRINZIPIEN:
+- Maximal 2-3 Sätze pro Antwort
+- Flexibel, nicht Schema F
+- Baue auf Vorwissen auf
+- Motiviere und ermutige
+- Mehrere Dialog-Runden pro Konzept
 
 ANTWORT-FORMAT (JSON):
 {
-    "nachricht": "Deine Antwort an den Schüler (2-3 Sätze)",
+    "nachricht": "Deine empathische Antwort (2-3 Sätze)",
+    "hilfe_stufe": 1-4 (Welche Hilfe-Stufe verwendest du?),
     "zeige_bild": true/false,
-    "bild_thema": "basen" oder null (welches Bild aus BILDER zeigen),
-    "konzept_verstanden": true/false (Ist das aktuelle Konzept verstanden?)
+    "bild_thema": "basen" oder null,
+    "konzept_verstanden": true/false,
+    "gebe_quellen": true/false,
+    "frustration_erkannt": true/false
 }"""
 
 
@@ -110,6 +159,7 @@ def start():
         session['aktuelles_thema'] = '1_grundlagen'
         session['aktuelles_konzept_index'] = 0
         session['conversation_history'] = []
+        session['versuche_aktuelles_konzept'] = 0
         
         thema_id = '1_grundlagen'
         thema_info = THEMEN[thema_id]
@@ -121,8 +171,8 @@ Erstes Konzept: {erstes_konzept}
 
 Der Schüler heißt {name} und startet gerade.
 
-Begrüße ihn kurz und beginne mit einer Frage, um sein VORWISSEN zu diesem Konzept zu erkunden.
-Sei freundlich und motivierend!
+Begrüße ihn kurz und beginne mit einer offenen Frage, um sein VORWISSEN zu erkunden.
+Sei freundlich, motivierend und ermutigend!
 
 Antworte im JSON-Format."""
 
@@ -180,6 +230,10 @@ def chat():
         thema_info = THEMEN[aktuelles_thema]
         konzept_index = session.get('aktuelles_konzept_index', 0)
         aktuelles_konzept = thema_info['konzepte'][konzept_index]
+        versuche = session.get('versuche_aktuelles_konzept', 0)
+        
+        # Versuche erhöhen
+        session['versuche_aktuelles_konzept'] = versuche + 1
         
         # Conversation History holen
         conversation_history = session.get('conversation_history', [])
@@ -196,17 +250,20 @@ def chat():
             for bild_id in BILDER[aktuelles_thema].keys():
                 verfuegbare_bilder.append(bild_id)
         
-        # Dialog-Prompt
+        # Dialog-Prompt mit Kontext
         dialog_prompt = f"""Thema: {thema_info['name']}
 Aktuelles Konzept: {aktuelles_konzept}
+Anzahl Versuche zu diesem Konzept: {versuche + 1}
 
-Verfügbare Bilder für dieses Thema: {', '.join(verfuegbare_bilder)}
+Verfügbare Bilder: {', '.join(verfuegbare_bilder)}
 
-Führe den Dialog weiter. Denke daran:
-- KEINE direkten Antworten geben
-- Durch FRAGEN und HINWEISE leiten
-- Falls ein Bild hilft, sage "Schau dir mal das Bild zu [Thema] an" und setze zeige_bild: true
-- Setze konzept_verstanden: true nur wenn der Schüler das Konzept WIRKLICH verstanden hat
+WICHTIG:
+- Der Schüler hat bereits {versuche + 1} Versuche gemacht
+- Wenn Versuche >= 3: Erkenne FRUSTRATION und gib mehr Hilfe
+- Verwende GESTUFTE HILFE (Stufe 1 → 2 → 3 → 4)
+- NIEMALS die komplette Antwort geben
+
+Führe den Dialog empathisch weiter.
 
 Antworte im JSON-Format."""
 
@@ -218,7 +275,7 @@ Antworte im JSON-Format."""
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=400,
+            max_tokens=500,
             temperature=0.7
         )
         
@@ -250,8 +307,17 @@ Antworte im JSON-Format."""
             if bild_info:
                 response_data['bild'] = bild_info
         
+        # Quellen hinzufügen falls KI es entschieden hat
+        if antwort.get('gebe_quellen'):
+            response_data['quellen'] = thema_info.get('quellen', [])
+            if antwort.get('konzept_verstanden'):
+                response_data['nachricht'] += "\n\n📚 Hier sind passende Quellen zum Vertiefen:\n" + "\n".join(f"• {q}" for q in thema_info.get('quellen', []))
+            else:
+                response_data['nachricht'] += "\n\n📚 Hier sind hilfreiche Quellen für später:\n" + "\n".join(f"• {q}" for q in thema_info.get('quellen', []))
+        
         # Wenn Konzept verstanden → nächstes Konzept
         if antwort.get('konzept_verstanden'):
+            session['versuche_aktuelles_konzept'] = 0  # Reset
             neuer_index = konzept_index + 1
             if neuer_index < len(thema_info['konzepte']):
                 session['aktuelles_konzept_index'] = neuer_index
@@ -261,6 +327,9 @@ Antworte im JSON-Format."""
             else:
                 response_data['thema_abgeschlossen'] = True
                 response_data['nachricht'] += "\n\n🎉 Fantastisch! Du hast alle Konzepte dieses Themas verstanden!"
+                # Quellen am Ende
+                if not antwort.get('gebe_quellen'):
+                    response_data['nachricht'] += "\n\n📚 Zum Vertiefen:\n" + "\n".join(f"• {q}" for q in thema_info.get('quellen', []))
         
         return jsonify(response_data)
         
@@ -283,6 +352,7 @@ def thema_wechseln():
         session['aktuelles_thema'] = thema_id
         session['aktuelles_konzept_index'] = 0
         session['conversation_history'] = []
+        session['versuche_aktuelles_konzept'] = 0
         
         erstes_konzept = thema_info['konzepte'][0]
         
@@ -293,6 +363,7 @@ Erstes Konzept: {erstes_konzept}
 Der Schüler wechselt zu einem neuen Thema.
 
 Begrüße ihn kurz für dieses neue Thema und erkunde sein Vorwissen zum ersten Konzept.
+Sei motivierend!
 
 Antworte im JSON-Format."""
 
